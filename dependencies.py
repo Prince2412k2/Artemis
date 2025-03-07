@@ -1,6 +1,6 @@
 import random
 import string
-
+import bcrypt
 
 def get_random_id(list_ids: list) -> str:
     while True:
@@ -9,4 +9,9 @@ def get_random_id(list_ids: list) -> str:
             return id
 
 
-print(get_random_id(["A89"]))
+
+def main():
+    print(get_random_id([]))
+
+if __name__=="__main__":
+    main()
