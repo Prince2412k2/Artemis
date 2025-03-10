@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,status
 from sqlmodel import Session
 from database import get_db
 from crud import register_user, get_users,remove_user
@@ -9,7 +9,7 @@ from models.models import TypeUser, UserResponse
 user_router = APIRouter()
 
 
-@user_router.post("/register")
+@user_router.post("/register",status_code=status.HTTP_201_CREATED)
 def create_user(
     user: UserResponse,
     session: Session = Depends(get_db),
@@ -35,5 +35,6 @@ def get_all_user(user_id:str,session: Session = Depends(get_db)):
         user_id=user_id,
         session=session,
     )
-
+@user_router.post("/login")
+def login()
 

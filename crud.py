@@ -1,9 +1,9 @@
 from typing import Optional
-from models.models import User, Workspace, Project, Run, TypeUser
+from models.models import User, Workspace, Project, Run, TypeUser,Token
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
-from dependencies import get_random_id
+from dependencies import get_random_id,bcrypt_context
 import logging
 
 logger=logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def register_user(
     user = User(
         name=name,
         email=email,
-        password=password,
+        password=bcrypt_context.hash(password),
         user_type=user_type,
         identifier=get_random_id(all_identifiers),
     )
@@ -34,7 +34,7 @@ def register_user(
     session.commit()
     session.refresh(user)
     logger.info(f"User: {name} added Sucessfully")
-    return user
+    return user.identifier
 
 
 def get_users(session: Session):
@@ -66,7 +66,7 @@ def create_new_workspace(session: Session, name: str, user_id: str):
     session.commit()
     session.refresh(workspace)
     logger.info(f"Workspace :{name} added Sucessfully")
-    return workspace
+    return workspace.identifier
 
 
 def get_workspace_of_id(session: Session, user_id: str):
@@ -112,7 +112,7 @@ def create_new_project(session: Session, name: str, workspace_id: str):
     session.add(project)
     session.commit()
     session.refresh(project)
-    return project
+    return project.identifier
 
 
 def get_project_of_id(session: Session, workspace_id: str):
@@ -160,7 +160,7 @@ def create_new_run(session: Session, name: str, project_id: str):
     session.add(run)
     session.commit()
     session.refresh(run)
-    return run
+    return run.identifier
 
 
 def get_run_of_id(session: Session, project_id: str):

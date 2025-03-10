@@ -21,14 +21,13 @@ class TokenData(BaseModel):
 
 class UserResponse(SQLModel):
     name: str
-    email: EmailStr = Field(index=True)
+    email: EmailStr = Field(index=True,unique=True)
     password: Optional[str] = None
     user_type: TypeUser = Field(description="PUBLIC | PROTECTED")
 
 
 class User(UserResponse, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    identifier: str = Field(index=True)
+    identifier: Optional[str] = Field(default=None, primary_key=True)
     workspaces: List["Workspace"] = Relationship(back_populates="user")
 
 
@@ -38,8 +37,7 @@ class WorkspaceResponse(SQLModel):
 
 
 class Workspace(WorkspaceResponse, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    identifier: str = Field(unique=True)
+    identifier: Optional[str] = Field(default=None, primary_key=True)
 
     user: Optional[User] = Relationship(back_populates="workspaces")
     projects: List["Project"] = Relationship(back_populates="workspace")
@@ -51,8 +49,7 @@ class ProjectResponse(SQLModel):
 
 
 class Project(ProjectResponse, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    identifier: str = Field(unique=True)
+    identifier: Optional[str] = Field(default=None, primary_key=True)
 
     workspace: Optional[Workspace] = Relationship(back_populates="projects")
     runs: List["Run"] = Relationship(back_populates="project")
@@ -64,8 +61,7 @@ class RunResponse(SQLModel):
 
 
 class Run(RunResponse, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    identifier: str = Field(unique=True)
+    identifier: Optional[str] = Field(default=None, primary_key=True)
 
     project: Optional[Project] = Relationship(back_populates="runs")
 

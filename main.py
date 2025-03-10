@@ -17,7 +17,7 @@ app.include_router(workspace_router, prefix="/workspace")
 app.include_router(project_router, prefix="/project")
 app.include_router(run_router, prefix="/run")
 
-app.get("/")
+@app.get("/")
 async def home():
     return {"Welcome": "User"}
 

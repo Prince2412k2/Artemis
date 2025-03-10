@@ -3,6 +3,25 @@ import string
 import bcrypt
 import logging
 import sys
+from sqlmodel import Session
+
+from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, oauth2
+from jose import jwt, JWTError
+
+SECRATE_KEY = "12nfj45647dghs74e7du4e89i4er98ie984we98i4w094oew"
+ALGORITHM = "HS256"
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+
+
+def authenticate_user(username:str,password:str,session:Session):
+    user=Session.exec(select(User).where(User.name==username)).first()
+    if not user:
+        return False
+    if not bcrypt_context.verify(password,user.password):
+        return False
+    return user
 
 # Configure global logger
 def configure_logger(log_level=logging.DEBUG, log_file="app.log"):
