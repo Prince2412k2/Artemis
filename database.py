@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, create_engine, Session
 
 URL = "sqlite:///database.db"
-engine = create_engine(URL, echo=True)
+engine = create_engine(URL)
 
 
 def get_db():

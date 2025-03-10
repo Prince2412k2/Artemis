@@ -4,7 +4,9 @@ from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
 from dependencies import get_random_id
+import logging
 
+logger=logging.getLogger(__name__)
 
 # ---- User ----
 def register_user(
@@ -31,6 +33,7 @@ def register_user(
     session.add(user)
     session.commit()
     session.refresh(user)
+    logger.info(f"User: {name} added Sucessfully")
     return user
 
 
@@ -39,6 +42,15 @@ def get_users(session: Session):
         i.model_dump(exclude={"password", "id"}) for i in session.exec(select(User))
     ]
 
+def remove_user(user_id:str,session:Session):
+    selected_user=session.exec(select(User).where(User.identifier==user_id)).first()
+    if not selected_user:
+        raise HTTPException(status_code=404, detail=f"User of {user_id=} not found")
+    else:
+        name=selected_user.name
+        session.delete(selected_user)
+        session.commit()
+        logger.info(f"User: {name} with ID:{user_id} Removed Sucessfully")
 
 # ---- Workspace ----
 
@@ -53,6 +65,7 @@ def create_new_workspace(session: Session, name: str, user_id: str):
     session.add(workspace)
     session.commit()
     session.refresh(workspace)
+    logger.info(f"Workspace :{name} added Sucessfully")
     return workspace
 
 
@@ -73,6 +86,15 @@ def get_workspace_of_id(session: Session, user_id: str):
 def get_workspaces(session: Session):
     return [i.model_dump(exclude={"id"}) for i in session.exec(select(Workspace))]
 
+def remove_workspace(workspace_id:str,session:Session):
+    selected_workspace=session.exec(select(Workspace).where(Workspace.identifier==workspace_id)).first()
+    if not selected_workspace:
+        raise HTTPException(status_code=404, detail=f"Workspace of {workspace_id=} not found")
+    else:
+        name=selected_workspace.name
+        session.delete(selected_workspace)
+        session.commit()
+        logger.info(f"Workspace: {name} with ID:{workspace_id} Removed Sucessfully")
 
 # ---- Project ----
 def create_new_project(session: Session, name: str, workspace_id: str):
@@ -113,6 +135,15 @@ def get_project_of_id(session: Session, workspace_id: str):
 def get_projects(session: Session):
     return [i.model_dump(exclude={"id"}) for i in session.exec(select(Project))]
 
+def remove_project(project_id:str,session:Session):
+    selected_project=session.exec(select(Project).where(Project.identifier==project_id)).first()
+    if not selected_project:
+        raise HTTPException(status_code=404, detail=f"Project of {project_id=} not found")
+    else:
+        name=selected_project.name
+        session.delete(selected_project)
+        session.commit()
+        logger.info(f"Project: {name} with ID:{project_id} Removed Sucessfully")
 
 # ---- Run ----
 def create_new_run(session: Session, name: str, project_id: str):
@@ -147,3 +178,13 @@ def get_run_of_id(session: Session, project_id: str):
 
 def get_runs(session: Session):
     return [i.model_dump(exclude={"id"}) for i in session.exec(select(Run))]
+
+def register_run(run_id:str,session:Session):
+    selected_run=session.exec(select(Run).where(Run.identifier==run_id)).first()
+    if not selected_run:
+        raise HTTPException(status_code=404, detail=f"Run of {run_id=} not found")
+    else:
+        name=selected_run.name
+        session.delete(selected_run)
+        session.commit()
+        logger.info(f"Run: {name} with ID:{run_id} Removed Sucessfully")
