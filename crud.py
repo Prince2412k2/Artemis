@@ -3,7 +3,7 @@ from models.models import User, Workspace, Project, Run, TypeUser,Token
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
-from dependencies import get_random_id,bcrypt_context
+from dependencies import get_random_id,bcrypt_context,verify_password,get_password_hash
 import logging
 
 logger=logging.getLogger(__name__)
@@ -22,11 +22,13 @@ def register_user(
                 status_code=400, detail="Protected acoounts require valid password"
             )
         )
+    if session.exec(select(User).where(User.name==name)).first():
+        raise HTTPException(status_code=404, detail=f"User of {name=} already exists")
     all_identifiers = list(session.exec(select(User.identifier)).all())
     user = User(
         name=name,
         email=email,
-        password=bcrypt_context.hash(password),
+        password=get_password_hash(password),
         user_type=user_type,
         identifier=get_random_id(all_identifiers),
     )
@@ -37,12 +39,14 @@ def register_user(
     return user.identifier
 
 
+
+
 def get_users(session: Session):
     return [
         i.model_dump(exclude={"password", "id"}) for i in session.exec(select(User))
     ]
 
-def remove_user(user_id:str,session:Session):
+def remove_user(session:Session,user_id:str):
     selected_user=session.exec(select(User).where(User.identifier==user_id)).first()
     if not selected_user:
         raise HTTPException(status_code=404, detail=f"User of {user_id=} not found")
@@ -52,12 +56,23 @@ def remove_user(user_id:str,session:Session):
         session.commit()
         logger.info(f"User: {name} with ID:{user_id} Removed Sucessfully")
 
+def get_user_of_id(id:str,session:Session):
+    user=session.exec(select(User).where(User.identifier == id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User of {id=} not found")
+    return user
+
+def authenticate_user(user_id:str, password: str,session:Session):
+    user=get_user_of_id(id=user_id,session=session)
+    if not verify_password(password,user.password):
+        return False
+    return user
+
 # ---- Workspace ----
 
 
 def create_new_workspace(session: Session, name: str, user_id: str):
-    if not session.exec(select(User).where(User.identifier == user_id)).first():
-        raise HTTPException(status_code=404, detail=f"User of {user_id=} not found")
+    get_user_of_id(id=user_id,session=session)
     all_identifiers = list(session.exec(select(Workspace.identifier)).all())
     workspace = Workspace(
         name=name, user_id=user_id, identifier=get_random_id(all_identifiers)
@@ -73,9 +88,7 @@ def get_workspace_of_id(session: Session, user_id: str):
     if not session.exec(select(User).where(User.identifier == user_id)).first():
         raise HTTPException(status_code=404, detail=f"User of {user_id=} not found")
 
-    workspaces = session.exec(
-        select(Workspace).where(Workspace.user_id == user_id)
-    ).all()
+    workspaces = session.exec(select(Workspace).where(Workspace.user_id == user_id)).all()
     if not workspaces:
         raise HTTPException(
             status_code=404, detail="No workspaces found for this user."

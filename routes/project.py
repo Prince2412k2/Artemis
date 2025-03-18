@@ -6,12 +6,12 @@ from pydantic import EmailStr
 
 from models.models import ProjectResponse
 
-
+from dependencies import create_access_token,verify_password,oauth2_bearer
 project_router = APIRouter()
 
 
 @project_router.post("/create")
-def create_project(project: ProjectResponse, session: Session = Depends(get_db)):
+def create_project(project: ProjectResponse, session: Session = Depends(get_db),token:str=Depends(oauth2_bearer)):
     try:
         return create_new_project(
             session=session,
@@ -23,12 +23,12 @@ def create_project(project: ProjectResponse, session: Session = Depends(get_db))
 
 
 @project_router.get("/get_all")
-def get_all_projects(session: Session = Depends(get_db)):
+def get_all_projects(session: Session = Depends(get_db),token:str=Depends(oauth2_bearer)):
     return get_projects(session=session)
 
 
 @project_router.post("/{id}")
-def get_project_by_id(workspace_id: str, session: Session = Depends(get_db)):
+def get_project_by_id(workspace_id: str, session: Session = Depends(get_db),token:str=Depends(oauth2_bearer)):
     try:
         return get_project_of_id(session=session, workspace_id=workspace_id)
     except Exception as e:

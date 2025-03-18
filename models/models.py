@@ -16,12 +16,12 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: str
+    user_id: str
 
 
 class UserResponse(SQLModel):
-    name: str
-    email: EmailStr = Field(index=True,unique=True)
+    name: str=Field(index=True,unique=True)
+    email: EmailStr = Field(index=True)
     password: Optional[str] = None
     user_type: TypeUser = Field(description="PUBLIC | PROTECTED")
 
@@ -30,15 +30,18 @@ class User(UserResponse, table=True):
     identifier: Optional[str] = Field(default=None, primary_key=True)
     workspaces: List["Workspace"] = Relationship(back_populates="user")
 
+class UserLogin(BaseModel):
+    id:str 
+    password:str
 
 class WorkspaceResponse(SQLModel):
     name: str
-    user_id: str = Field(foreign_key="user.identifier")
+
 
 
 class Workspace(WorkspaceResponse, table=True):
     identifier: Optional[str] = Field(default=None, primary_key=True)
-
+    user_id: str = Field(foreign_key="user.identifier")
     user: Optional[User] = Relationship(back_populates="workspaces")
     projects: List["Project"] = Relationship(back_populates="workspace")
 

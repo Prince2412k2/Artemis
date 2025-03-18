@@ -3,25 +3,47 @@ import string
 import bcrypt
 import logging
 import sys
-from sqlmodel import Session
+from sqlmodel import Session,select
+from models.models import User
 
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, oauth2
 from jose import jwt, JWTError
+from datetime import datetime, timedelta,timezone
 
-SECRATE_KEY = "12nfj45647dghs74e7du4e89i4er98ie984we98i4w094oew"
+SECRET_KEY= "12nfj45647dghs74e7du4e89i4er98ie984we98i4w094oew"
 ALGORITHM = "HS256"
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/user/login")
 
 
 def authenticate_user(username:str,password:str,session:Session):
-    user=Session.exec(select(User).where(User.name==username)).first()
+    user=session.exec(select(User).where(User.name==username)).first()
     if not user:
         return False
     if not bcrypt_context.verify(password,user.password):
         return False
     return user
+
+def get_password_hash(password):
+    return bcrypt_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return bcrypt_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict,  expires_delta: timedelta = timedelta(minutes=15)):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
 
 # Configure global logger
 def configure_logger(log_level=logging.DEBUG, log_file="app.log"):

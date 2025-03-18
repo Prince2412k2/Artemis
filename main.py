@@ -22,4 +22,4 @@ async def home():
     return {"Welcome": "User"}
 
 if __name__ == '__main__':
-    uvicorn.run(app, log_level="trace")
+    uvicorn.run("main:app", log_level="trace")
