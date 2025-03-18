@@ -22,13 +22,26 @@ def register_user(
                 status_code=400, detail="Protected acoounts require valid password"
             )
         )
+<<<<<<< Updated upstream
     if session.exec(select(User).where(User.name==name)).first():
         raise HTTPException(status_code=404, detail=f"User of {name=} already exists")
+=======
+    check_user = session.exec(select(User.name).where(User.name == name)).first()
+    if check_user:
+        raise (HTTPException(status_code=409, detail="Username is Taken"))
+
+    hash_pass = bcrypt_context.hash(password) if password else None
+
+>>>>>>> Stashed changes
     all_identifiers = list(session.exec(select(User.identifier)).all())
     user = User(
         name=name,
         email=email,
+<<<<<<< Updated upstream
         password=get_password_hash(password),
+=======
+        password=hash_pass,
+>>>>>>> Stashed changes
         user_type=user_type,
         identifier=get_random_id(all_identifiers),
     )
