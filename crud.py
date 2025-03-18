@@ -226,4 +226,3 @@ def register_run(run_id: str, session: Session):
         session.delete(selected_run)
         session.commit()
         logger.info(f"Run: {name} with ID:{run_id} Removed Sucessfully")
-
