@@ -10,16 +10,17 @@ app = FastAPI()
 logger = configure_logger()
 
 
-
-
 app.include_router(user_router, prefix="/user")
 app.include_router(workspace_router, prefix="/workspace")
 app.include_router(project_router, prefix="/project")
 app.include_router(run_router, prefix="/run")
 
+
 @app.get("/")
 async def home():
     return {"Welcome": "User"}
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     uvicorn.run("main:app", log_level="trace")
+

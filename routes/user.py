@@ -1,19 +1,25 @@
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException,status
+from typing import Annotated, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
-from database import get_db
-from crud import register_user, get_users,remove_user,get_user_of_id
-from pydantic import EmailStr
-from models.models import TypeUser, UserResponse,Token,UserLogin
+from database import get_sql_db
+from service import register_user, get_users, remove_user, get_user_of_id
+from models.models import TypeUser, UserResponse, Token, UserLogin
 
-from dependencies import create_access_token,verify_password,oauth2_bearer,verify_token
+from service import (
+    authenticate_user,
+    create_access_token,
+    oauth2_bearer,
+    verify_token,
+)
+
 user_router = APIRouter()
 
 
-@user_router.post("/register",status_code=status.HTTP_201_CREATED)
+@user_router.post("/register", status_code=status.HTTP_201_CREATED)
 def create_user(
     user: UserResponse,
-    session: Session = Depends(get_db),
+    session: Session = Depends(get_sql_db),
 ):
     return register_user(
         session=session,
@@ -23,31 +29,34 @@ def create_user(
         user_type=user.user_type,
     )
 
+
 @user_router.post("/login")
-def login(user:UserLogin,session:Session= Depends(get_db))->Token:
-    real_user =  get_user_of_id(id=user.id,session=session)
-    if not verify_password(plain_password=user.password, hashed_password=real_user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    # Generate JWT token
-    access_token = create_access_token(data={"sub": real_user.identifier})
-    return Token(access_token=access_token,token_type="bearer")
+def login(
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: Session = Depends(get_sql_db),
+) -> Optional[Token]:
+    user_db = authenticate_user(form.username, form.password, session=session)
+    if user_db:
+        access_token = create_access_token(data={"sub": user_db.identifier})
+        return Token(access_token=access_token, token_type="bearer")
 
 
 @user_router.get("/get")
-def get_all_user(session: Session = Depends(get_db)):
+def get_all_user(session: Session = Depends(get_sql_db)):
     return get_users(
         session=session,
     )
 
+
 @user_router.delete("/")
-def get_user(session: Session = Depends(get_db),token:str=Depends(oauth2_bearer)):
-    payload=verify_token(token=token)
+def get_user(
+    session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
+):
+    payload = verify_token(token=token)
     if payload:
         return remove_user(
             user_id=payload["sub"],
             session=session,
-            )
-    else :
-        raise HTTPException(status_code=404,detail="Invalid JWT token")
-
-
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Invalid JWT token")
