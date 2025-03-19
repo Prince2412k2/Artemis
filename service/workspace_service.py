@@ -43,7 +43,8 @@ def get_workspaces(session: Session):
     return [i.model_dump(exclude={"id"}) for i in session.exec(select(Workspace))]
 
 
-def remove_workspace(workspace_id: str, session: Session):
+def remove_workspace(user_id:str,workspace_id: str, session: Session):
+
     selected_workspace = session.exec(
         select(Workspace).where(Workspace.identifier == workspace_id)
     ).first()
@@ -56,3 +57,4 @@ def remove_workspace(workspace_id: str, session: Session):
         session.delete(selected_workspace)
         session.commit()
         logger.info(f"Workspace: {name} with ID:{workspace_id} Removed Sucessfully")
+

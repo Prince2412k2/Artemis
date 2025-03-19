@@ -59,7 +59,7 @@ class ProjectResponse(SQLModel):
 
 class Project(ProjectResponse, table=True):
     identifier: Optional[str] = Field(default=None, primary_key=True)
-
+    user_id: str = Field(foreign_key="user.identifier")
     workspace: Optional[Workspace] = Relationship(back_populates="projects")
     runs: List["Run"] = Relationship(back_populates="project")
     user_id: str = Field(foreign_key="user.identifier")
@@ -73,7 +73,7 @@ class RunResponse(SQLModel):
 
 class Run(RunResponse, table=True):
     identifier: Optional[str] = Field(default=None, primary_key=True)
-
+    user_id: str = Field(foreign_key="user.identifier")
     project: Optional[Project] = Relationship(back_populates="runs")
     user_id: str = Field(foreign_key="user.identifier")
 

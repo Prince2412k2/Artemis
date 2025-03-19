@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from database import get_sql_db
-from service import create_new_project, get_project_of_id, get_projects
+from service import create_new_project, get_project_of_id, get_projects,remove_project
 from pydantic import EmailStr
 
 from models.models import ProjectResponse
@@ -23,7 +23,7 @@ def create_project(
             session=session,
             name=project.name,
             workspace_id=project.workspace_id,
-            user_id=payload.id,
+            user_id=payload["sub"],
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail="Workspace already Exists")
@@ -42,7 +42,22 @@ def get_project_by_id(
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
 ):
+    payload=verify_token(token=token)
     try:
-        return get_project_of_id(session=session, workspace_id=workspace_id)
+        return get_project_of_id(session=session, workspace_id=workspace_id,user_id=payload["sub"])
     except Exception as e:
         raise HTTPException(status_code=400, detail="Workspace Doesnt Exist")
+
+@project_router.delete("/")
+def delete_project(workspace_id:str,
+    session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
+):
+    payload = verify_token(token=token)
+    if payload:
+        return remove_project(
+            user_id=payload["sub"],
+            project_id=workspace_id,
+            session=session,
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Invalid JWT token")

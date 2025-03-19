@@ -30,7 +30,7 @@ def create_new_project(session: Session, name: str, workspace_id: str, user_id: 
     return project.identifier
 
 
-def get_project_of_id(session: Session, workspace_id: str, user_id: str):
+def get_project_of_id(session: Session, workspace_id: str):
     if not session.exec(
         select(Workspace).where(Workspace.identifier == workspace_id)
     ).first():
@@ -51,7 +51,7 @@ def get_projects(session: Session):
     return [i.model_dump(exclude={"id"}) for i in session.exec(select(Project))]
 
 
-def remove_project(project_id: str, session: Session):
+def remove_project(user_id:str,project_id: str, session: Session):
     selected_project = session.exec(
         select(Project).where(Project.identifier == project_id)
     ).first()
