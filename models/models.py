@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from database import engine
-
+import uuid
 
 ##Enums
 # class TypeUser(Enum):
@@ -16,24 +16,20 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    user_id: str
-
-
 ##User
-class UserResponse(SQLModel):
+class UserRequest(SQLModel):
     name: str = Field(index=True, unique=True)
     email: EmailStr = Field(index=True)
     password: Optional[str] = None
 
 
-class User(UserResponse, table=True):
-    identifier: Optional[str] = Field(default=None, primary_key=True)
+class User(UserRequest, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     workspaces: List["Workspace"] = Relationship(back_populates="user")
 
 
 class UserLogin(BaseModel):
-    id: str
+    name: str
     password: str
 
 
@@ -43,8 +39,8 @@ class WorkspaceResponse(SQLModel):
 
 
 class Workspace(WorkspaceResponse, table=True):
-    identifier: Optional[str] = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="user.identifier")
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: str = Field(foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="workspaces")
     projects: List["Project"] = Relationship(back_populates="workspace")
 
@@ -52,28 +48,28 @@ class Workspace(WorkspaceResponse, table=True):
 ##Project
 class ProjectResponse(SQLModel):
     name: str
-    workspace_id: str = Field(foreign_key="workspace.identifier")
+    workspace_id: str = Field(foreign_key="workspace.id")
 
 
 class Project(ProjectResponse, table=True):
-    identifier: Optional[str] = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="user.identifier")
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: str = Field(foreign_key="user.id")
     workspace: Optional[Workspace] = Relationship(back_populates="projects")
     runs: List["Run"] = Relationship(back_populates="project")
-    user_id: str = Field(foreign_key="user.identifier")
+    user_id: str = Field(foreign_key="user.id")
 
 
 # Runs
 class RunResponse(SQLModel):
     name: str
-    project_id: str = Field(foreign_key="project.identifier")
+    project_id: str = Field(foreign_key="project.id")
 
 
 class Run(RunResponse, table=True):
-    identifier: Optional[str] = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="user.identifier")
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: str = Field(foreign_key="user.id")
     project: Optional[Project] = Relationship(back_populates="runs")
-    user_id: str = Field(foreign_key="user.identifier")
+    user_id: str = Field(foreign_key="user.id")
 
 
 SQLModel.metadata.create_all(engine)

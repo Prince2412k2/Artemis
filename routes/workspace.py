@@ -61,7 +61,6 @@ def delete_workspace(
     payload = verify_token(token=token)
     if payload:
         return remove_workspace(
-            user_id=payload["sub"],
             workspace_id=workspace_id,
             session=session,
         )

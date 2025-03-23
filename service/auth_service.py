@@ -1,3 +1,4 @@
+import uuid
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError

@@ -1,38 +1,42 @@
-from typing import Optional, List
-from models.models import User, Workspace, Project
-from pydantic import EmailStr
+import uuid
+from typing import List
+from models.models import Workspace, Project
 from sqlmodel import Session, select
 from fastapi import HTTPException
-from dependencies import get_random_id, verify_password, get_password_hash
 import logging
+
+from service.user_service import get_user_of_id
 
 
 logger = logging.getLogger(__name__)
 
 
 def create_new_project(session: Session, name: str, workspace_id: str, user_id: str):
+    user = get_user_of_id(id_str=user_id, session=session)
     if not session.exec(
-        select(Workspace).where(Workspace.identifier == workspace_id)
+        select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))
     ).first():
         raise HTTPException(
             status_code=404, detail=f"workspace of {workspace_id=} not found"
         )
-    all_identifiers = list(session.exec(select(Project.identifier)).all())
-    project = Project(
-        name=name,
-        workspace_id=workspace_id,
-        identifier=get_random_id(all_identifiers),
-        user_id=user_id,
-    )
-    session.add(project)
-    session.commit()
-    session.refresh(project)
-    return project.identifier
+    try:
+        project = Project(
+            name=name,
+            workspace_id=workspace_id,
+            user_id=user_id,
+        )
+        session.add(project)
+        session.commit()
+        session.refresh(project)
+        return project.id
+    except Exception as e:
+        logger.error(f"[create_new_project] threw an error : {e}")
+        return {}
 
 
 def get_project_of_workspace(session: Session, workspace_id: str):
     if not session.exec(
-        select(Workspace).where(Workspace.identifier == workspace_id)
+        select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))
     ).first():
         raise HTTPException(
             status_code=404, detail=f"workspace of {workspace_id=} not found"
@@ -44,7 +48,7 @@ def get_project_of_workspace(session: Session, workspace_id: str):
         raise HTTPException(
             status_code=404, detail="No projects found for this workspace."
         )
-    return [i.model_dump(exclude={"id"}) for i in projects]
+    return [i.model_dump() for i in projects]
 
 
 def get_projects_of_user(session: Session, user_id: str) -> List[Project]:
@@ -60,7 +64,7 @@ def get_projects(session: Session):
 
 def remove_project(user_id: str, project_id: str, session: Session):
     selected_project = session.exec(
-        select(Project).where(Project.identifier == project_id)
+        select(Project).where(Project.id == project_id)
     ).first()
     if not selected_project:
         raise HTTPException(

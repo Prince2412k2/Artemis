@@ -2,30 +2,26 @@ from typing import List
 from models.models import Project, Run
 from sqlmodel import Session, select
 from fastapi import HTTPException
-from dependencies import get_random_id
 import logging
+from service.user_service import get_user_of_id
 
 logger = logging.getLogger(__name__)
 
 
 def create_new_run(session: Session, name: str, project_id: str, user_id: str):
-    if not session.exec(
-        select(Project).where(Project.identifier == project_id)
-    ).first():
+    if not session.exec(select(Project).where(Project.id == project_id)).first():
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
-    all_identifiers = list(session.exec(select(Run.identifier)).all())
     run = Run(
         name=name,
         project_id=project_id,
-        identifier=get_random_id(all_identifiers),
         user_id=user_id,
     )
     session.add(run)
     session.commit()
     session.refresh(run)
-    return run.identifier
+    return run.id
 
 
 def get_runs_of_user(session: Session, user_id: str) -> List[Run]:
@@ -34,9 +30,7 @@ def get_runs_of_user(session: Session, user_id: str) -> List[Run]:
 
 
 def get_run_of_project(session: Session, project_id: str) -> List[Run]:
-    if not session.exec(
-        select(Project).where(Project.identifier == project_id)
-    ).first():
+    if not session.exec(select(Project).where(Project.id == project_id)).first():
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
@@ -51,7 +45,7 @@ def get_runs(session: Session):
 
 
 def remove_run(run_id: str, session: Session):
-    selected_run = session.exec(select(Run).where(Run.identifier == run_id)).first()
+    selected_run = session.exec(select(Run).where(Run.id == run_id)).first()
     if not selected_run:
         raise HTTPException(status_code=404, detail=f"Run of {run_id=} not found")
     else:

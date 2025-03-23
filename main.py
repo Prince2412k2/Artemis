@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from routes.user import user_router
 from routes.workspace import workspace_router
@@ -7,7 +8,7 @@ from dependencies import configure_logger
 import uvicorn
 
 app = FastAPI()
-logger = configure_logger()
+logger = configure_logger(log_level=logging.WARNING)
 
 
 app.include_router(user_router, prefix="/user")
@@ -23,4 +24,3 @@ async def home():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", log_level="trace")
-

@@ -1,5 +1,5 @@
-from typing import Optional
-from typing_extensions import List
+import logging
+from typing import Optional, Any, List, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from database import get_sql_db
@@ -10,12 +10,12 @@ from service import (
     get_projects,
     remove_project,
 )
-from pydantic import EmailStr
 
 from models.models import Project, ProjectResponse
 
 from service import oauth2_bearer, verify_token
 
+logger = logging.getLogger(__name__)
 project_router = APIRouter()
 
 
@@ -34,7 +34,8 @@ def create_project(
                 workspace_id=project.workspace_id,
                 user_id=payload["sub"],
             )
-        except Exception:
+        except Exception as e:
+            logger.warning(f"[create_project] threw Exception : {e}")
             raise HTTPException(status_code=400, detail="Project already Exists")
 
 
@@ -43,17 +44,19 @@ def get_all_projects(session: Session = Depends(get_sql_db)):
     return get_projects(session=session)
 
 
-@project_router.post("/{id}")
+@project_router.post("/{workspace_id}")
 def get_project_by_workspace_id(
     workspace_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
-):
+) -> Optional[List[Dict[str, Any]]]:
     if verify_token(token=token):
         try:
             return get_project_of_workspace(session=session, workspace_id=workspace_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Workspace Doesnt Exist")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"{e}")
+    else:
+        return [{}]
 
 
 @project_router.get("/my")
