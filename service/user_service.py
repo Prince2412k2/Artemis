@@ -1,5 +1,5 @@
 from typing import Optional
-from models.models import User, Workspace, Project, Run, TypeUser, Token
+from models.models import User, Workspace, Project, Run, Token
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
@@ -14,22 +14,15 @@ def register_user(
     name: str,
     email: EmailStr,
     password: Optional[str],
-    user_type: TypeUser,
 ):
-    if user_type == TypeUser.PROTECTED and not password:
-        raise (
-            HTTPException(
-                status_code=400, detail="Protected acoounts require valid password"
-            )
-        )
     if session.exec(select(User).where(User.name == name)).first():
         raise HTTPException(status_code=404, detail=f"User of {name=} already exists")
+
     all_identifiers = list(session.exec(select(User.identifier)).all())
     user = User(
         name=name,
         email=email,
         password=get_password_hash(password),
-        user_type=user_type,
         identifier=get_random_id(all_identifiers),
     )
     session.add(user)

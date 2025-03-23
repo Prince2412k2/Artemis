@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
-
+from fastapi import HTTPException
 from models.models import User
 
 SECRET_KEY = "12nfj45647dghs74e7du4e89i4er98ie984we98i4w094oew"
@@ -46,6 +46,7 @@ def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
+        raise HTTPException(status_code=404, detail="Invalid JWT token")
         return None
 
 
@@ -90,4 +91,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

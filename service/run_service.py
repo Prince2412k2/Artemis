@@ -1,3 +1,4 @@
+from typing import List
 from models.models import Project, Run
 from sqlmodel import Session, select
 from fastapi import HTTPException
@@ -7,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_new_run(session: Session, name: str, project_id: str):
+def create_new_run(session: Session, name: str, project_id: str, user_id: str):
     if not session.exec(
         select(Project).where(Project.identifier == project_id)
     ).first():
@@ -16,7 +17,10 @@ def create_new_run(session: Session, name: str, project_id: str):
         )
     all_identifiers = list(session.exec(select(Run.identifier)).all())
     run = Run(
-        name=name, project_id=project_id, identifier=get_random_id(all_identifiers)
+        name=name,
+        project_id=project_id,
+        identifier=get_random_id(all_identifiers),
+        user_id=user_id,
     )
     session.add(run)
     session.commit()
@@ -24,17 +28,22 @@ def create_new_run(session: Session, name: str, project_id: str):
     return run.identifier
 
 
-def get_run_of_id(session: Session, project_id: str):
+def get_runs_of_user(session: Session, user_id: str) -> List[Run]:
+    runs_of_user = list(session.exec(select(Run).where(Run.user_id == user_id)).all())
+    return runs_of_user
+
+
+def get_run_of_project(session: Session, project_id: str) -> List[Run]:
     if not session.exec(
         select(Project).where(Project.identifier == project_id)
     ).first():
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
-    runs = session.exec(select(Run).where(Run.project_id == project_id)).all()
-    if not runs:
-        raise HTTPException(status_code=404, detail="No runs found for this project.")
-    return [i.model_dump(exclude={"id"}) for i in runs]
+    runs = list(session.exec(select(Run).where(Run.project_id == project_id)).all())
+    if runs:
+        return runs
+    raise HTTPException(status_code=404, detail="No runs found for this project.")
 
 
 def get_runs(session: Session):

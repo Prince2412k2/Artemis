@@ -13,14 +13,16 @@ from service.workspace_service import (
 )
 from service.project_service import (
     create_new_project,
-    get_project_of_id,
+    get_project_of_workspace,
+    get_projects_of_user,
     remove_project,
     get_projects,
 )
 
 from service.run_service import (
     create_new_run,
-    get_run_of_id,
+    get_run_of_project,
+    get_runs_of_user,
     remove_run,
     get_runs,
 )

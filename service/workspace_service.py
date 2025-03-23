@@ -1,5 +1,5 @@
 from typing import Optional
-from models.models import User, Workspace, Project, Run, TypeUser, Token
+from models.models import User, Workspace
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
@@ -36,15 +36,14 @@ def get_workspace_of_id(session: Session, user_id: str):
         raise HTTPException(
             status_code=404, detail="No workspaces found for this user."
         )
-    return [i.model_dump(exclude={"id"}) for i in workspaces]
+    return [i.model_dump() for i in workspaces]
 
 
 def get_workspaces(session: Session):
-    return [i.model_dump(exclude={"id"}) for i in session.exec(select(Workspace))]
+    return [i.model_dump() for i in session.exec(select(Workspace))]
 
 
-def remove_workspace(user_id:str,workspace_id: str, session: Session):
-
+def remove_workspace(user_id: str, workspace_id: str, session: Session):
     selected_workspace = session.exec(
         select(Workspace).where(Workspace.identifier == workspace_id)
     ).first()
@@ -57,4 +56,3 @@ def remove_workspace(user_id:str,workspace_id: str, session: Session):
         session.delete(selected_workspace)
         session.commit()
         logger.info(f"Workspace: {name} with ID:{workspace_id} Removed Sucessfully")
-

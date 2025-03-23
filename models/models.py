@@ -2,13 +2,12 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from database import engine
-from enum import Enum
 
 
 ##Enums
-class TypeUser(Enum):
-    PUBLIC = "PUBLIC"
-    PROTECTED = "PROTECTED"
+# class TypeUser(Enum):
+#    PUBLIC = "PUBLIC"
+#    PROTECTED = "PROTECTED"
 
 
 ##AUth
@@ -26,7 +25,6 @@ class UserResponse(SQLModel):
     name: str = Field(index=True, unique=True)
     email: EmailStr = Field(index=True)
     password: Optional[str] = None
-    user_type: TypeUser = Field(description="PUBLIC | PROTECTED")
 
 
 class User(UserResponse, table=True):

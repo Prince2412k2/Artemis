@@ -1,5 +1,5 @@
-from typing import Optional
-from models.models import User, Workspace, Project, Run, TypeUser, Token
+from typing import Optional, List
+from models.models import User, Workspace, Project
 from pydantic import EmailStr
 from sqlmodel import Session, select
 from fastapi import HTTPException
@@ -30,7 +30,7 @@ def create_new_project(session: Session, name: str, workspace_id: str, user_id: 
     return project.identifier
 
 
-def get_project_of_id(session: Session, workspace_id: str):
+def get_project_of_workspace(session: Session, workspace_id: str):
     if not session.exec(
         select(Workspace).where(Workspace.identifier == workspace_id)
     ).first():
@@ -47,11 +47,18 @@ def get_project_of_id(session: Session, workspace_id: str):
     return [i.model_dump(exclude={"id"}) for i in projects]
 
 
+def get_projects_of_user(session: Session, user_id: str) -> List[Project]:
+    projects_of_user = list(
+        session.exec(select(Project).where(Project.user_id == user_id)).all()
+    )
+    return projects_of_user
+
+
 def get_projects(session: Session):
-    return [i.model_dump(exclude={"id"}) for i in session.exec(select(Project))]
+    return [i.model_dump() for i in session.exec(select(Project))]
 
 
-def remove_project(user_id:str,project_id: str, session: Session):
+def remove_project(user_id: str, project_id: str, session: Session):
     selected_project = session.exec(
         select(Project).where(Project.identifier == project_id)
     ).first()

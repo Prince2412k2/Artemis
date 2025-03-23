@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 from database import get_sql_db
 from service import register_user, get_users, remove_user, get_user_of_id
-from models.models import TypeUser, UserResponse, Token, UserLogin
+from models.models import UserResponse, Token, UserLogin
 
 from service import (
     authenticate_user,
@@ -26,7 +26,6 @@ def create_user(
         name=user.name,
         email=user.email,
         password=user.password,
-        user_type=user.user_type,
     )
 
 
@@ -41,7 +40,7 @@ def login(
         return Token(access_token=access_token, token_type="bearer")
 
 
-@user_router.get("/get")
+@user_router.get("/get_all")
 def get_all_user(session: Session = Depends(get_sql_db)):
     return get_users(
         session=session,
@@ -49,7 +48,7 @@ def get_all_user(session: Session = Depends(get_sql_db)):
 
 
 @user_router.delete("/")
-def get_user(
+def delete_user(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ):
     payload = verify_token(token=token)
@@ -58,5 +57,3 @@ def get_user(
             user_id=payload["sub"],
             session=session,
         )
-    else:
-        raise HTTPException(status_code=404, detail="Invalid JWT token")

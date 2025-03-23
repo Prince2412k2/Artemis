@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from database import get_sql_db
-from service import create_new_workspace, get_workspace_of_id, get_workspaces,remove_workspace
+from service import (
+    create_new_workspace,
+    get_workspace_of_id,
+    get_workspaces,
+    remove_workspace,
+)
 from models.models import WorkspaceResponse
 from service import (
     oauth2_bearer,
@@ -36,8 +41,8 @@ def get_all_workspace(session: Session = Depends(get_sql_db)):
     return get_workspaces(session=session)
 
 
-@workspace_router.post("/get")
-def get_workspace_by_id(
+@workspace_router.post("/my")
+def get_workspace_by_user_id(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ):
     payload = verify_token(token=token)
@@ -46,9 +51,12 @@ def get_workspace_by_id(
     else:
         raise HTTPException(status_code=404, detail="Invalid JWT token")
 
+
 @workspace_router.delete("/")
-def delete_workspace(workspace_id:str,
-    session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
+def delete_workspace(
+    workspace_id: str,
+    session: Session = Depends(get_sql_db),
+    token: str = Depends(oauth2_bearer),
 ):
     payload = verify_token(token=token)
     if payload:
