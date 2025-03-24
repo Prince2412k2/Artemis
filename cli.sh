@@ -3,6 +3,12 @@
 tput smcup # Switch to alternate screen
 export GUM_FILTER_PLACEHOLDER_BACKGROUND="212"
 
+function jq() {
+  ./bin/jq "$@"
+}
+function gum() {
+  ./bin/gum "$@"
+}
 ####################################################################
 
 function get_all_users() {
@@ -10,11 +16,11 @@ function get_all_users() {
   all_users=$(
     echo "$all_users"
     echo "Back"
-  ) # Ensure "Back" is a separate line
+  )
 
   choice=$(gum filter <<<"$all_users")
   if [ "$choice" = "Back" ]; then
-    return # Return to main menu instead of calling exit incorrectly
+    return # Go back to main menu
   fi
 }
 
@@ -31,7 +37,7 @@ function login() {
 
   if [ -z "$token" ] || [ "$token" = "null" ]; then
     echo "Login failed. No token received."
-    exit 1
+    return # Avoid script exit
   fi
   export TOKEN="$token"
   echo "Login successful!"
@@ -44,16 +50,17 @@ function get_workspaces() {
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -H "Authorization: Bearer $TOKEN")
-  echo "$workspaces"
-}
-
-function choose_workspace() {
-  workspaces=$(get_workspaces)
 
   if [ -z "$workspaces" ] || [ "$workspaces" = "null" ]; then
     echo "No workspaces found."
     return
   fi
+  echo "$workspaces"
+}
+
+function choose_workspace() {
+  workspaces=$(get_workspaces)
+  if [ -z "$workspaces" ]; then return; fi
 
   ws_list=$(
     echo "$workspaces" | jq -r ".[].name"
@@ -62,8 +69,7 @@ function choose_workspace() {
   workspace=$(gum filter --placeholder "Workspaces" <<<"$ws_list")
 
   if [ "$workspace" = "Back" ]; then
-    main
-    exit
+    return # Go back to previous step
   fi
 
   workspace_id=$(echo "$workspaces" | jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .id')
@@ -83,19 +89,19 @@ function get_projects() {
 function choose_project() {
   projects=$(get_projects "$1")
 
-  if [ -z "$projects" ] || [ "$projects" = "null" ]; then
-    echo "No projects found."
-    return
+  if [ "$(echo "$projects" | jq 'length')" -eq 0 ]; then
+    project="Back"
+  else
+    ps_list=$(
+      echo "$projects" | jq -r ".[].name"
+      echo "Back"
+    )
   fi
 
-  ps_list=$(
-    echo "$projects" | jq -r ".[].name"
-    echo "Back"
-  )
   project=$(gum filter --placeholder "Projects" <<<"$ps_list")
 
   if [ "$project" = "Back" ]; then
-    choose_workspace
+    choose_workspace # Go back to workspace selection
     return
   fi
 
@@ -115,16 +121,15 @@ function get_run() {
 
 function choose_run() {
   runs=$(get_run "$1")
-
-  if [ -z "$runs" ] || [ "$runs" = "null" ]; then
-    echo "No runs found."
-    return
+  if [ "$(echo "$runs" | jq 'length')" -eq 0 ]; then
+    run="Back"
+  else
+    run_list=$(
+      echo "$runs" | jq -r ".[].name"
+      echo "Back"
+    )
   fi
 
-  run_list=$(
-    echo "$runs" | jq -r ".[].name"
-    echo "Back"
-  )
   run=$(gum filter --placeholder "Runs" <<<"$run_list")
 
   if [ "$run" = "Back" ]; then
@@ -137,19 +142,26 @@ function choose_run() {
 }
 
 function main() {
-  # Main Menu
-  choice=$(gum filter --placeholder "Menu" <<<"Register"$'\n'"Login"$'\n'"ALL_USERS"$'\n'"EXIT")
+  while true; do
+    choice=$(gum filter --placeholder "Menu" <<<"Register"$'\n'"Login"$'\n'"ALL_USERS"$'\n'"EXIT")
 
-  case "$choice" in
-  "ALL_USERS") get_all_users ;;
-  "Login")
-    login
-    workspace_id=$(choose_workspace)
-    project_id=$(choose_project "$workspace_id")
-    run_id=$(choose_run "$project_id")
-    ;;
-  "EXIT") exit 0 ;;
-  esac
+    case "$choice" in
+    "ALL_USERS") get_all_users ;;
+    "Login")
+      login
+      if [ -n "$TOKEN" ]; then
+        workspace_id=$(choose_workspace)
+        if [ -n "$workspace_id" ]; then
+          project_id=$(choose_project "$workspace_id")
+          if [ -n "$project_id" ]; then
+            run_id=$(choose_run "$project_id")
+          fi
+        fi
+      fi
+      ;;
+    "EXIT") exit 0 ;;
+    esac
+  done
 }
 
 main
