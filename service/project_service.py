@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_new_project(session: Session, name: str, workspace_id: str, user_id: str):
+    
     user = get_user_of_id(id_str=user_id, session=session)
     workspace=session.exec(
         select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))).first()
@@ -19,14 +20,14 @@ def create_new_project(session: Session, name: str, workspace_id: str, user_id: 
         raise HTTPException(
             status_code=404, detail=f"workspace of {workspace_id=} not found"
         )
-    projects=[i.name for i in workspace.projects if i.name==name]
-    if projects:
+    projects=session.exec(select(Project).where(Project.name==name)).all()
+    if [i for i in projects if i.workspace_id==uuid.UUID(workspace_id)]:
         raise HTTPException(status_code=404,detail=f"Project of name : {name} already exists")
     try:
         project = Project(
             name=name,
-            workspace_id=workspace_id,
-            user_id=user_id,
+            workspace_id=uuid.UUID(workspace_id),
+            user_id=uuid.UUID(user_id),
         )
         session.add(project)
         session.commit()
@@ -45,7 +46,7 @@ def get_project_of_workspace(session: Session, workspace_id: str):
             status_code=404, detail=f"workspace of {workspace_id=} not found"
         )
     projects = session.exec(
-        select(Project).where(Project.workspace_id == workspace_id)
+        select(Project).where(Project.workspace_id == uuid.UUID(workspace_id))
     ).all()
     if not projects:
         raise HTTPException(
@@ -56,7 +57,7 @@ def get_project_of_workspace(session: Session, workspace_id: str):
 
 def get_projects_of_user(session: Session, user_id: str) -> List[Project]:
     projects_of_user = list(
-        session.exec(select(Project).where(Project.user_id == user_id)).all()
+        session.exec(select(Project).where(Project.user_id == uuid.UUID(user_id))).all()
     )
     return projects_of_user
 
@@ -67,7 +68,7 @@ def get_projects(session: Session):
 
 def remove_project(user_id: str, project_id: str, session: Session):
     selected_project = session.exec(
-        select(Project).where(Project.id == project_id)
+        select(Project).where(Project.id == uuid.UUID(project_id))
     ).first()
     if not selected_project:
         raise HTTPException(

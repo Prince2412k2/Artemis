@@ -3,6 +3,9 @@
 tput smcup # Switch to alternate screen
 export GUM_FILTER_PLACEHOLDER_BACKGROUND="212"
 
+export WorkspaceId=0
+export ProjectId=0
+export RunId=0
 
 ####################################################################
 
@@ -64,17 +67,18 @@ function choose_workspace() {
   workspace=$(gum filter --placeholder "Workspaces" <<<"$ws_list")
 
   if [ "$workspace" = "Back" ]; then
-    main exit # Go back to previous step
+    main exit
   fi
 
   workspace_id=$(echo "$workspaces" | jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .id')
-  echo "$workspace_id"
+  export WorkspaceId=workspace_id
+  choose_project
 }
 
 ####################################################################
 
 function get_projects() {
-  projects=$(curl -s -X POST "http://localhost:8000/project/$1" \
+  projects=$(curl -s -X POST "http://localhost:8000/project/$WorkspaceId" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -H "Authorization: Bearer $TOKEN")
@@ -82,7 +86,7 @@ function get_projects() {
 }
 
 function choose_project() {
-  projects=$(get_projects "$1")
+  projects=$(get_projects)
 
   if [ "$(echo "$projects" | jq 'length')" -eq 0 ]; then
     project="Back"
@@ -96,18 +100,19 @@ function choose_project() {
   project=$(gum filter --placeholder "Projects" <<<"$ps_list")
 
   if [ "$project" = "Back" ]; then
-    choose_workspace # Go back to workspace selection
+    choose_workspace
     exit
   fi
 
-  project_id=$(echo "$projects" | jq -r --arg project "$project" '.[] | select(.name == $project) | .workspace_id')
-  echo "$project_id"
+  project_id=$(echo "$projects" | jq -r --arg project "$project" '.[] | select(.name == $project) | .id')
+  printf $project_id
+  choose_run $project_id
 }
 
 ####################################################################
 
 function get_run() {
-  runs=$(curl -s -X POST "http://localhost:8000/run/$1" \
+  runs=$(curl -s -X POST "http://localhost:8000/run/$ProjectId" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -H "Authorization: Bearer $TOKEN")
@@ -115,48 +120,11 @@ function get_run() {
 }
 
 function choose_run() {
-  runs=$(get_run "$1")
+  runs=$(get_run)
   if [ "$(echo "$runs" | jq 'length')" -eq 0 ]; then
-    run="Back"
+    run_list="Back"
   else
     run_list=$(
       echo "$runs" | jq -r ".[].name"
       echo "Back"
-    )
-  fi
-
-  run=$(gum filter --placeholder "Runs" <<<"$run_list")
-
-  if [ "$run" = "Back" ]; then
-    choose_project "$1"
-    exit
-  fi
-
-  run_id=$(echo "$runs" | jq -r --arg run "$run" '.[] | select(.name == $run) | .project_id')
-  echo "$run_id"
-}
-
-function main() {
-  while true; do
-    choice=$(gum filter --placeholder "Menu" <<<"Register"$'\n'"Login"$'\n'"ALL_USERS"$'\n'"EXIT")
-
-    case "$choice" in
-    "ALL_USERS") get_all_users ;;
-    "Login")
-      login
-      if [ -n "$TOKEN" ]; then
-        workspace_id=$(choose_workspace)
-        if [ -n "$workspace_id" ]; then
-          project_id=$(choose_project "$workspace_id")
-          if [ -n "$project_id" ]; then
-            run_id=$(choose_run "$project_id")
-          fi
-        fi
-      fi
-      ;;
-    "EXIT") exit 0 ;;
-    esac
-  done
-}
-
-main
+    )              

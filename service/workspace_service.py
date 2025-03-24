@@ -1,5 +1,6 @@
 from models.models import User, Workspace
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 import logging
 import uuid
@@ -12,17 +13,21 @@ def create_new_workspace(session: Session, name: str, user_id: str):
     get_user_of_id(id_str=user_id, session=session)
     if session.exec(select(Workspace).where(Workspace.name==name)).first():
         raise HTTPException(status_code=404,detail=f"Workspcae of name : {name} already exists")
-    workspace = Workspace(name=name, user_id=user_id)
-    session.add(workspace)
-    session.commit()
-    session.refresh(workspace)
-    logger.info(f"Workspace :{name} added Sucessfully")
-    return workspace.id
+    workspace = Workspace(name=name, user_id=uuid.UUID(user_id))
+    try:
+        session.add(workspace)
+        session.commit()
+        session.refresh(workspace)
+        return workspace
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Workspace name must be unique for the user")
+
 
 
 def get_workspace_of_id(session: Session, user_id: str):
     workspaces = session.exec(
-        select(Workspace).where(Workspace.user_id == user_id)
+        select(Workspace).where(Workspace.user_id == uuid.UUID(user_id))
     ).all()
     if not workspaces:
         raise HTTPException(

@@ -30,7 +30,7 @@ def create_project(
         return create_new_project(
                 session=session,
                 name=project.name,
-                workspace_id=project.workspace_id,
+                workspace_id=str(project.workspace_id),
                 user_id=payload["sub"],
             )
 

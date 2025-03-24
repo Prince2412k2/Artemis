@@ -28,7 +28,7 @@ def create_run(
             return create_new_run(
                 session=session,
                 name=run.name,
-                project_id=run.project_id,
+                project_id=str(run.project_id),
                 user_id=payload["sub"],
             )
         except Exception as e:
@@ -53,7 +53,7 @@ def get_run_by_user(
         return get_runs_of_user(session=session, user_id=payload["sub"])
 
 
-@run_router.post("/{id}")
+@run_router.post("/{project_id}")
 def get_run_by_project_id(
     project_id: str,
     session: Session = Depends(get_sql_db),

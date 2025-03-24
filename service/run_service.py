@@ -1,3 +1,4 @@
+import stat
 from typing import List
 from sqlmodel import Session, select
 from fastapi import HTTPException
@@ -11,16 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 def create_new_run(session: Session, name: str, project_id: str, user_id: str):
-    if not session.exec(
+    project= session.exec(
         select(Project).where(Project.id == uuid.UUID(project_id))
-    ).first():
+    ).first()
+    
+    if not project:
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
+    runs=session.exec(select(Run).where(Run.name==name)).all()
+    if [i for i in runs if i.project_id == uuid.UUID(project_id)]:
+        raise HTTPException(status_code=404,detail=f"Run with name : {name} already exists")
     run = Run(
         name=name,
-        project_id=project_id,
-        user_id=user_id,
+        project_id=uuid.UUID(project_id),
+        user_id=uuid.UUID(user_id),
     )
     session.add(run)
     session.commit()
@@ -29,16 +35,16 @@ def create_new_run(session: Session, name: str, project_id: str, user_id: str):
 
 
 def get_runs_of_user(session: Session, user_id: str) -> List[Run]:
-    runs_of_user = list(session.exec(select(Run).where(Run.user_id == user_id)).all())
+    runs_of_user = list(session.exec(select(Run).where(Run.user_id == uuid.UUID(user_id))).all())
     return runs_of_user
 
 
 def get_run_of_project(session: Session, project_id: str) -> List[Run]:
-    if not session.exec(select(Project).where(Project.id == project_id)).first():
+    if not session.exec(select(Project).where(Project.id == uuid.UUID(project_id))).first():
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
-    runs = list(session.exec(select(Run).where(Run.project_id == project_id)).all())
+    runs = list(session.exec(select(Run).where(Run.project_id == uuid.UUID(project_id))).all())
     if runs:
         return runs
     raise HTTPException(status_code=404, detail="No runs found for this project.")
@@ -49,7 +55,7 @@ def get_runs(session: Session):
 
 
 def remove_run(run_id: str, session: Session):
-    selected_run = session.exec(select(Run).where(Run.id == run_id)).first()
+    selected_run = session.exec(select(Run).where(Run.id == uuid.UUID(run_id))).first()
     if not selected_run:
         raise HTTPException(status_code=404, detail=f"Run of {run_id=} not found")
     else:
