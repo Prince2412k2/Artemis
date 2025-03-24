@@ -27,16 +27,12 @@ def create_project(
 ):
     payload = verify_token(token)
     if payload:
-        try:
-            return create_new_project(
+        return create_new_project(
                 session=session,
                 name=project.name,
                 workspace_id=project.workspace_id,
                 user_id=payload["sub"],
             )
-        except Exception as e:
-            logger.warning(f"[create_project] threw Exception : {e}")
-            raise HTTPException(status_code=400, detail="Project already Exists")
 
 
 @project_router.get("/get_all")

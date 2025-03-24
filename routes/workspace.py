@@ -24,14 +24,11 @@ def create_workspace(
 ):
     payload = verify_token(token=token)
     if payload:
-        try:
-            return create_new_workspace(
+        return create_new_workspace(
                 session=session,
                 name=workspace.name,
                 user_id=payload["sub"],
-            )
-        except Exception as e:
-            raise Exception({e})
+        )
     else:
         raise HTTPException(status_code=404, detail="Invalid JWT token")
 

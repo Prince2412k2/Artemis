@@ -13,12 +13,15 @@ logger = logging.getLogger(__name__)
 
 def create_new_project(session: Session, name: str, workspace_id: str, user_id: str):
     user = get_user_of_id(id_str=user_id, session=session)
-    if not session.exec(
-        select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))
-    ).first():
+    workspace=session.exec(
+        select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))).first()
+    if not workspace:
         raise HTTPException(
             status_code=404, detail=f"workspace of {workspace_id=} not found"
         )
+    projects=[i.name for i in workspace.projects if i.name==name]
+    if projects:
+        raise HTTPException(status_code=404,detail=f"Project of name : {name} already exists")
     try:
         project = Project(
             name=name,

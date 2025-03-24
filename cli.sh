@@ -3,12 +3,7 @@
 tput smcup # Switch to alternate screen
 export GUM_FILTER_PLACEHOLDER_BACKGROUND="212"
 
-function jq() {
-  ./bin/jq "$@"
-}
-function gum() {
-  ./bin/gum "$@"
-}
+
 ####################################################################
 
 function get_all_users() {
@@ -20,7 +15,7 @@ function get_all_users() {
 
   choice=$(gum filter <<<"$all_users")
   if [ "$choice" = "Back" ]; then
-    return # Go back to main menu
+    main exit # Go back to main menu
   fi
 }
 
@@ -37,7 +32,7 @@ function login() {
 
   if [ -z "$token" ] || [ "$token" = "null" ]; then
     echo "Login failed. No token received."
-    return # Avoid script exit
+    main exit # Avoid script exit
   fi
   export TOKEN="$token"
   echo "Login successful!"
@@ -53,7 +48,7 @@ function get_workspaces() {
 
   if [ -z "$workspaces" ] || [ "$workspaces" = "null" ]; then
     echo "No workspaces found."
-    return
+    main exit
   fi
   echo "$workspaces"
 }
@@ -69,7 +64,7 @@ function choose_workspace() {
   workspace=$(gum filter --placeholder "Workspaces" <<<"$ws_list")
 
   if [ "$workspace" = "Back" ]; then
-    return # Go back to previous step
+    main exit # Go back to previous step
   fi
 
   workspace_id=$(echo "$workspaces" | jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .id')
@@ -102,7 +97,7 @@ function choose_project() {
 
   if [ "$project" = "Back" ]; then
     choose_workspace # Go back to workspace selection
-    return
+    exit
   fi
 
   project_id=$(echo "$projects" | jq -r --arg project "$project" '.[] | select(.name == $project) | .workspace_id')
@@ -134,7 +129,7 @@ function choose_run() {
 
   if [ "$run" = "Back" ]; then
     choose_project "$1"
-    return
+    exit
   fi
 
   run_id=$(echo "$runs" | jq -r --arg run "$run" '.[] | select(.name == $run) | .project_id')

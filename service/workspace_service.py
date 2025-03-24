@@ -2,7 +2,7 @@ from models.models import User, Workspace
 from sqlmodel import Session, select
 from fastapi import HTTPException
 import logging
-
+import uuid
 from service.user_service import get_user_of_id
 
 logger = logging.getLogger(__name__)
@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 def create_new_workspace(session: Session, name: str, user_id: str):
     get_user_of_id(id_str=user_id, session=session)
-
+    if session.exec(select(Workspace).where(Workspace.name==name)).first():
+        raise HTTPException(status_code=404,detail=f"Workspcae of name : {name} already exists")
     workspace = Workspace(name=name, user_id=user_id)
     session.add(workspace)
     session.commit()
@@ -36,7 +37,7 @@ def get_workspaces(session: Session):
 
 def remove_workspace(workspace_id: str, session: Session):
     selected_workspace = session.exec(
-        select(Workspace).where(Workspace.id == workspace_id)
+        select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))
     ).first()
     if not selected_workspace:
         raise HTTPException(
