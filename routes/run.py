@@ -24,12 +24,17 @@ def create_run(
 ):
     payload = verify_token(token=token)
     if payload:
-        return create_new_run(
-            session=session,
-            name=run.name,
-            project_id=run.project_id,
-            user_id=payload["sub"],
-        )
+        try:
+            return create_new_run(
+                session=session,
+                name=run.name,
+                project_id=run.project_id,
+                user_id=payload["sub"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"[create_run] threw a Exception : {e}"
+            )
 
 
 @run_router.get("/get_all")

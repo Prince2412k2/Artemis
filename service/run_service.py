@@ -1,15 +1,19 @@
 from typing import List
-from models.models import Project, Run
 from sqlmodel import Session, select
 from fastapi import HTTPException
 import logging
+import uuid
+
+from models.models import Project, Run
 from service.user_service import get_user_of_id
 
 logger = logging.getLogger(__name__)
 
 
 def create_new_run(session: Session, name: str, project_id: str, user_id: str):
-    if not session.exec(select(Project).where(Project.id == project_id)).first():
+    if not session.exec(
+        select(Project).where(Project.id == uuid.UUID(project_id))
+    ).first():
         raise HTTPException(
             status_code=404, detail=f"Project of {project_id=} not found"
         )
