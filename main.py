@@ -8,7 +8,7 @@ from dependencies import configure_logger
 import uvicorn
 
 app = FastAPI()
-logger = configure_logger(log_level=logging.WARNING)
+logger = configure_logger(log_level=logging.INFO)
 
 
 app.include_router(user_router, prefix="/user")

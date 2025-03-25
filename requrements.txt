@@ -13,3 +13,4 @@ sqlmodel==0.0.23
 starlette==0.46.0
 typer==0.15.2
 uvicorn==0.34.0
+passlib==1.7.4
