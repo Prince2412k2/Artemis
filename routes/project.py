@@ -20,7 +20,7 @@ project_router = APIRouter()
 
 
 @project_router.post("/create")
-def create_project(
+async def create_project(
     project: ProjectResponse,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
@@ -36,12 +36,12 @@ def create_project(
 
 
 @project_router.get("/get_all")
-def get_all_projects(session: Session = Depends(get_sql_db)):
+async def get_all_projects(session: Session = Depends(get_sql_db)):
     return get_projects(session=session)
 
 
 @project_router.post("/{workspace_id}")
-def get_project_by_workspace_id(
+async def get_project_by_workspace_id(
     workspace_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
@@ -56,7 +56,7 @@ def get_project_by_workspace_id(
 
 
 @project_router.get("/my")
-def get_project_by_user(
+async def get_project_by_user(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ) -> Optional[List[Project]]:
     payload = verify_token(token=token)
@@ -65,7 +65,7 @@ def get_project_by_user(
 
 
 @project_router.delete("/")
-def delete_project(
+async def delete_project(
     workspace_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),

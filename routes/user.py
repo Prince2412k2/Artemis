@@ -17,7 +17,7 @@ user_router = APIRouter()
 
 
 @user_router.post("/register", status_code=status.HTTP_201_CREATED)
-def create_user(
+async def create_user(
     user: UserRequest,
     session: Session = Depends(get_sql_db),
 ):
@@ -30,7 +30,7 @@ def create_user(
 
 
 @user_router.post("/login")
-def login(
+async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_sql_db),
 ) -> Optional[Token]:
@@ -41,14 +41,14 @@ def login(
 
 
 @user_router.get("/get_all")
-def get_all_user(session: Session = Depends(get_sql_db)):
+async def get_all_user(session: Session = Depends(get_sql_db)):
     return get_users(
         session=session,
     )
 
 
 @user_router.delete("/")
-def delete_user(
+async def delete_user(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ):
     payload = verify_token(token=token)

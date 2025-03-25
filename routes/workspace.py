@@ -17,7 +17,7 @@ workspace_router = APIRouter()
 
 
 @workspace_router.post("/create")
-def create_workspace(
+async def create_workspace(
     workspace: WorkspaceResponse,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
@@ -34,12 +34,12 @@ def create_workspace(
 
 
 @workspace_router.get("/get_all")
-def get_all_workspace(session: Session = Depends(get_sql_db)):
+async def get_all_workspace(session: Session = Depends(get_sql_db)):
     return get_workspaces(session=session)
 
 
 @workspace_router.post("/my")
-def get_workspace_by_user_id(
+async def get_workspace_by_user_id(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ):
     payload = verify_token(token=token)
@@ -50,7 +50,7 @@ def get_workspace_by_user_id(
 
 
 @workspace_router.delete("/")
-def delete_workspace(
+async def delete_workspace(
     workspace_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),

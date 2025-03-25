@@ -11,8 +11,12 @@ logger = logging.getLogger(__name__)
 
 def create_new_workspace(session: Session, name: str, user_id: str):
     get_user_of_id(id_str=user_id, session=session)
-    if session.exec(select(Workspace).where(Workspace.name==name)).first():
+    workspace=session.exec(select(Workspace).where(Workspace.name==name)).all()
+        
+    workspaces_in_project=[i for i in workspace if i.user_id == uuid.UUID(user_id)]
+    if workspaces_in_project:
         raise HTTPException(status_code=404,detail=f"Workspcae of name : {name} already exists")
+    
     workspace = Workspace(name=name, user_id=uuid.UUID(user_id))
     try:
         session.add(workspace)

@@ -2,6 +2,7 @@ import uuid
 from typing import List
 from models.models import Workspace, Project
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 import logging
 
@@ -16,26 +17,31 @@ def create_new_project(session: Session, name: str, workspace_id: str, user_id: 
     user = get_user_of_id(id_str=user_id, session=session)
     workspace=session.exec(
         select(Workspace).where(Workspace.id == uuid.UUID(workspace_id))).first()
+    
     if not workspace:
         raise HTTPException(
             status_code=404, detail=f"workspace of {workspace_id=} not found"
         )
+    
     projects=session.exec(select(Project).where(Project.name==name)).all()
     if [i for i in projects if i.workspace_id==uuid.UUID(workspace_id)]:
         raise HTTPException(status_code=404,detail=f"Project of name : {name} already exists")
-    try:
-        project = Project(
+    
+    
+    project = Project(
             name=name,
             workspace_id=uuid.UUID(workspace_id),
             user_id=uuid.UUID(user_id),
         )
+    try:
+
         session.add(project)
         session.commit()
         session.refresh(project)
         return project.id
-    except Exception as e:
-        logger.error(f"[create_new_project] threw an error : {e}")
-        return {}
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Project name must be unique for the Workspace")
 
 
 def get_project_of_workspace(session: Session, workspace_id: str):

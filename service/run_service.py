@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from fastapi import HTTPException
 import logging
 import uuid
+from sqlalchemy.exc import IntegrityError
 
 from models.models import Project, Run
 from service.user_service import get_user_of_id
@@ -21,17 +22,29 @@ def create_new_run(session: Session, name: str, project_id: str, user_id: str):
             status_code=404, detail=f"Project of {project_id=} not found"
         )
     runs=session.exec(select(Run).where(Run.name==name)).all()
-    if [i for i in runs if i.project_id == uuid.UUID(project_id)]:
+    
+    runs_in_project=[i for i in runs if i.project_id == uuid.UUID(project_id)]
+    if runs_in_project:
         raise HTTPException(status_code=404,detail=f"Run with name : {name} already exists")
+    
+    
     run = Run(
         name=name,
         project_id=uuid.UUID(project_id),
         user_id=uuid.UUID(user_id),
     )
-    session.add(run)
-    session.commit()
-    session.refresh(run)
-    return run.id
+    
+    try:
+
+        session.add(run)
+        session.commit()
+        session.refresh(run)
+        return run.id
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Run name must be unique for the Project")
+    
+
 
 
 def get_runs_of_user(session: Session, user_id: str) -> List[Run]:

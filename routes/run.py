@@ -17,7 +17,7 @@ run_router = APIRouter()
 
 
 @run_router.post("/create")
-def create_run(
+async def create_run(
     run: RunResponse,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
@@ -38,14 +38,14 @@ def create_run(
 
 
 @run_router.get("/get_all")
-def get_all_runs(
+async def get_all_runs(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ):
     return get_runs(session=session)
 
 
 @run_router.get("/my")
-def get_run_by_user(
+async def get_run_by_user(
     session: Session = Depends(get_sql_db), token: str = Depends(oauth2_bearer)
 ) -> Optional[List[Run]]:
     payload = verify_token(token=token)
@@ -54,7 +54,7 @@ def get_run_by_user(
 
 
 @run_router.post("/{project_id}")
-def get_run_by_project_id(
+async def get_run_by_project_id(
     project_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
@@ -67,7 +67,7 @@ def get_run_by_project_id(
 
 
 @run_router.delete("/")
-def delete_run(
+async def delete_run(
     run_id: str,
     session: Session = Depends(get_sql_db),
     token: str = Depends(oauth2_bearer),
